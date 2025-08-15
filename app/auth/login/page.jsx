@@ -1,15 +1,15 @@
 "use client";
-
 import axios from "axios";
 import Link from "next/link";
-import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
-
+  const router = useRouter();
   // Error states
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -42,17 +42,62 @@ const LoginPage = () => {
 
       const token = res.data.data.token;
       localStorage.setItem("token", token);
-
       toast.success("Login Successful!");
+      await checkTwoFa(); //call function
     } catch (err) {
-      console.error("Login error:", err.response?.data || err.message);
       if (err.response?.status === 422) {
         toast.error(err.response.data.message);
-      } else {
-        toast.error("Something went wrong. Please try again.");
       }
     }
   };
+
+  // if check two fa
+  const checkTwoFa = async () => {
+    try {
+      // Get api general setting
+      const generalGetSetting = await axios.get(
+        "https://moneychain.tdevs.co/api/get-settings?key=fa_verification",
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const siteTwoFaSetting = generalGetSetting.data.data;
+      console.log("general setting :", siteTwoFaSetting);
+
+      // Get api user setting
+      const userSetting = await axios.get(
+        "https://moneychain.tdevs.co/api/auth/user/get",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const userTwoFaSetting = userSetting.data.data.two_fa;
+      console.log("user setting:", userTwoFaSetting);
+
+      if (siteTwoFaSetting === "1" && userTwoFaSetting === true) {
+        router.push("/auth/login/two-fa-verify");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Error in checkTwoFa:", err);
+      toast.error("Something went wrong while checking 2FA.");
+    }
+  };
+
+  // check if user is already login
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.replace("/dashboard");
+    }
+  }, []);
 
   return (
     <>
