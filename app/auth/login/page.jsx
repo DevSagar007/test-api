@@ -92,12 +92,12 @@ const LoginPage = () => {
   };
 
   // check if user is already login
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      router.replace("/dashboard");
-    }
-  }, []);
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   if (token) {
+  //     router.replace("/dashboard");
+  //   }
+  // }, []);
 
   return (
     <>
